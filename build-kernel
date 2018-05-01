@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 if [[ -f ${HOME}/.ragnar.rc ]]; then
     source ${HOME}/.ragnar.rc
@@ -68,10 +68,10 @@ while getopts "a:cd:hk:i:m:p" arg; do
 done
 
 case ${MACHINE} in
-    am57xx-evm)
+    am57xx-evm|x15)
         ARCH=arm
         CONFIG_URL=${CONFIG_URL:-"http://snapshots.linaro.org/openembedded/lkft/morty/${MACHINE}/rpb/${KERNEL_VERSION}/latest/config"}
-        image_name=zImage
+        image_name="zImage"
         dtb_name="am57xx-beagle-x15"
         ;;
     hikey)
@@ -115,9 +115,11 @@ if [[ $clean_build -eq 1 ]]; then
     rm -rf ${STAGING}
 fi
 
+mkdir -p ${OUTPUT} ${STAGING}
+
 if [[ -z ${DEFCONFIG_FILENAME} ]]; then
     curl -sSL -o .config ${CONFIG_URL}
-    yes '' |make -j ${NUM_CPUS} CROSS_COMPILE=${CROSS_COMPILE} ARCH=${ARCH} KDIR=${KDIR} O=${OUTPUT} oldconfig
+    make -j ${NUM_CPUS} CROSS_COMPILE=${CROSS_COMPILE} ARCH=${ARCH} KDIR=${KDIR} O=${OUTPUT} olddefconfig
     rm .config
 else
     make -j ${NUM_CPUS} CROSS_COMPILE=${CROSS_COMPILE} ARCH=${ARCH} KDIR=${KDIR} O=${OUTPUT} ${DEFCONFIG_FILENAME}
