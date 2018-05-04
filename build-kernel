@@ -1,13 +1,6 @@
 #!/bin/bash
 
-set -ex
-
-if [[ -f ${HOME}/.ragnar.rc ]]; then
-    source ${HOME}/.ragnar.rc
-else
-    TOP=${TOP:-"${HOME}/ragnar-artifacts"}
-fi
-mkdir -p ${TOP}
+. ragnar-lib && init
 
 NUM_CPUS=${NUM_CPUS:-"$(getconf _NPROCESSORS_ONLN)"}
 
@@ -70,7 +63,7 @@ done
 case ${MACHINE} in
     am57xx-evm|x15)
         ARCH=arm
-        CONFIG_URL=${CONFIG_URL:-"http://snapshots.linaro.org/openembedded/lkft/morty/${MACHINE}/rpb/${KERNEL_VERSION}/latest/config"}
+        CONFIG_URL=${CONFIG_URL:-"http://snapshots.linaro.org/openembedded/lkft/morty/am57xx-evm/rpb/${KERNEL_VERSION}/latest/config"}
         image_name="zImage"
         dtb_name="am57xx-beagle-x15"
         ;;
@@ -80,6 +73,12 @@ case ${MACHINE} in
         image_name=Image
         dtb_name="hi6220-hikey"
         ;;
+    dragonboard-410c|db410c)
+        ARCH=arm64
+        CONFIG_URL=${CONFIG_URL:-"http://snapshots.linaro.org/openembedded/lkft/morty/dragonboard-410c/rpb/${KERNEL_VERSION}/latest/config"}
+        image_name=Image
+        dtb_name="dragonboard-410c"
+        ;
     *)
         usage
         exit 1

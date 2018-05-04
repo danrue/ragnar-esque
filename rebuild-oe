@@ -1,0 +1,81 @@
+#!/bin/bash
+
+set -e
+
+. ragnar-lib && init
+
+# Given a snapshots build URL, rebuild a specified kernel and re-publish image
+# and kernel files based on board type.
+
+URL=http://snapshots.linaro.org/openembedded/lkft/morty/hikey/rpb/linux-mainline/816
+
+check_md5() {
+
+    path=$1
+    md5_sum=$2
+    new_md5=$(md5sum "${tmp_path}" | awk '{print $1}')
+    if [ "${new_md5}" != "${md5_sum}" ]; then
+        echo "ERROR: md5sum does not match ${md5_sum}"
+        echo "${new_md5} ${path}"
+        exit 1
+    fi
+
+}
+
+download_from_snapshots () {
+    # Download file from $1 (url)
+    # Save to $2 (path)
+    # If md5sum is provided to $3, verify file contents
+    # If file transfer fails or md5sum fails, exit with an error
+    (
+        set -e
+        src_url=$1
+        dst_path=$2
+        md5_sum=$3
+
+        if [ -f "$dst_path" ]; then
+            # File already exists. Verify contents if we have an md5.
+            if [ -n "${md5_sum}" ]; then
+                check_md5 "${dst_path}" "${md5_sum}"
+            fi
+            return
+        fi
+        tmp_path=$(dirname "${dst_path}")/.$(basename "${dst_path}")
+        echo "Downloading ${src_url}"
+        curl -SsL -o "${tmp_path}" "${src_url}"
+        if [ -n "${md5_sum}" ]; then
+            check_md5 "${dst_path}" "${md5_sum}"
+        fi
+        mv "${tmp_path}" "${dst_path}"
+    )
+}
+
+
+MACHINE=$(echo "${URL}" | awk -F/ '{print $7}')
+KERNEL_VERSION=$(echo "${URL}" | awk -F/ '{print $9}')
+BUILD_NUMBER=$(echo "${URL}" | awk -F/ '{print $10}')
+
+OE_TOP=${TOP}/rebuild-oe/${KERNEL_VERSION}-${MACHINE}-${BUILD_NUMBER}
+mkdir -p "${OE_TOP}"
+echo "Building in ${OE_TOP}"
+
+# Create directory to hold original build files
+OE_ORIGINAL_TOP=${OE_TOP}/original
+mkdir -p "${OE_ORIGINAL_TOP}"
+
+# Download original MD5SUMS to discover files
+OE_ORIGINAL_MD5SUMS_PATH=${OE_ORIGINAL_TOP}/MD5SUMS.txt
+download_from_snapshots "${URL}/MD5SUMS.txt" "${OE_ORIGINAL_MD5SUMS_PATH}"
+
+# Download ext4.gz image
+ROOTFS_EXT4_GZ_FILE=$(grep 'rootfs.ext4.gz' "${OE_ORIGINAL_MD5SUMS_PATH}" | awk '{print $2}')
+ROOTFS_EXT4_FILE=$(basename -s .gz "${ROOTFS_EXT4_GZ_FILE}")
+ROOTFS_EXT4_GZ_MD5=$(grep 'rootfs.ext4.gz' "${OE_ORIGINAL_MD5SUMS_PATH}" | awk '{print $1}')
+ROOTFS_EXT4_GZ_FILE_PATH=${OE_ORIGINAL_TOP}/${ROOTFS_EXT4_GZ_FILE}
+ROOTFS_EXT4_GZ_URL=${URL}/${ROOTFS_EXT4_GZ_FILE}
+if [ ! -f "${ROOTFS_EXT4_FILE}" ]; then
+    download_from_snapshots "${ROOTFS_EXT4_GZ_URL}" "${ROOTFS_EXT4_GZ_FILE_PATH}" "${ROOTFS_EXT4_GZ_MD5}"
+    gunzip "${ROOTFS_EXT4_GZ_FILE_PATH}"
+fi
+
+

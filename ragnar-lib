@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+
+init () {
+    if [[ -f ${HOME}/.ragnar.rc ]]; then
+        # shellcheck source=/dev/null
+        source "${HOME}/.ragnar.rc"
+    else
+        TOP=${TOP:-"${HOME}/ragnar-artifacts"}
+    fi
+    mkdir -p "${TOP}"
+}
