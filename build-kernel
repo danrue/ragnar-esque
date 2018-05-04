@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 . ragnar-lib && init
 
 NUM_CPUS=${NUM_CPUS:-"$(getconf _NPROCESSORS_ONLN)"}
@@ -22,13 +24,14 @@ usage() {
     echo -e "      KERNEL_VERSION's to choose from:"
     echo -e "          linux-mainline,"
     echo -e "          linux-next,"
-    echo -e "          linux-stable-4.14,"
+    echo -e "          linux-stable-rc-4.14,"
     echo -e "          ..."
     echo -e "   -i defconfig, defconfig to build in the src tree"
     echo -e "   -m MACHINE, add machine name"
     echo -e "   -p, build deb packages"
     echo -e "   -h, prints out this help"
 }
+
 
 while getopts "a:cd:hk:i:m:p" arg; do
     case $arg in
@@ -43,6 +46,7 @@ while getopts "a:cd:hk:i:m:p" arg; do
             ;;
         k)
             KERNEL_VERSION="$OPTARG"
+            echo "setting kernel version to $KERNEL_VERSION"
             ;;
         i)
             DEFCONFIG_FILENAME="$OPTARG"
@@ -60,30 +64,8 @@ while getopts "a:cd:hk:i:m:p" arg; do
     esac
 done
 
-case ${MACHINE} in
-    am57xx-evm|x15)
-        ARCH=arm
-        CONFIG_URL=${CONFIG_URL:-"http://snapshots.linaro.org/openembedded/lkft/morty/am57xx-evm/rpb/${KERNEL_VERSION}/latest/config"}
-        image_name="zImage"
-        dtb_name="am57xx-beagle-x15"
-        ;;
-    hikey)
-        ARCH=arm64
-        CONFIG_URL=${CONFIG_URL:-"http://snapshots.linaro.org/openembedded/lkft/morty/${MACHINE}/rpb/${KERNEL_VERSION}/latest/config"}
-        image_name=Image
-        dtb_name="hi6220-hikey"
-        ;;
-    dragonboard-410c|db410c)
-        ARCH=arm64
-        CONFIG_URL=${CONFIG_URL:-"http://snapshots.linaro.org/openembedded/lkft/morty/dragonboard-410c/rpb/${KERNEL_VERSION}/latest/config"}
-        image_name=Image
-        dtb_name="dragonboard-410c"
-        ;
-    *)
-        usage
-        exit 1
-        ;;
-esac
+
+set_machine_vars
 
 OUTPUT=${OUTPUT:-"${TOP}/build_output/${ARCH}/${git_describe}"}
 STAGING=${STAGING:-"${TOP}/staging/${ARCH}/${git_describe}"}

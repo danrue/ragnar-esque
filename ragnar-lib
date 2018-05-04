@@ -7,7 +7,34 @@ init () {
         # shellcheck source=/dev/null
         source "${HOME}/.ragnar.rc"
     else
-        TOP=${TOP:-"${HOME}/ragnar-artifacts"}
+        export TOP=${TOP:-"${HOME}/ragnar-artifacts"}
     fi
     mkdir -p "${TOP}"
+}
+
+set_machine_vars () {
+    case ${MACHINE} in
+        am57xx-evm|x15)
+            export ARCH=arm
+            export CONFIG_URL=${CONFIG_URL:-"http://snapshots.linaro.org/openembedded/lkft/morty/am57xx-evm/rpb/${KERNEL_VERSION}/latest/config"}
+            export image_name="zImage"
+            export dtb_name="am57xx-beagle-x15"
+            ;;
+        hikey)
+            export ARCH=arm64
+            export CONFIG_URL=${CONFIG_URL:-"http://snapshots.linaro.org/openembedded/lkft/morty/${MACHINE}/rpb/${KERNEL_VERSION}/latest/config"}
+            export image_name=Image
+            export dtb_name="hi6220-hikey"
+            ;;
+        dragonboard-410c|db410c)
+            export ARCH=arm64
+            export CONFIG_URL=${CONFIG_URL:-"http://snapshots.linaro.org/openembedded/lkft/morty/dragonboard-410c/rpb/${KERNEL_VERSION}/latest/config"}
+            export image_name=Image
+            export dtb_name="dragonboard-410c"
+            ;;
+        *)
+            usage
+            exit 1
+            ;;
+    esac
 }

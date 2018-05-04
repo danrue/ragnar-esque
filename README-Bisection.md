@@ -117,6 +117,3 @@ drue@xps:~/src/ragnar-esque/hikey$ ext2simg -zv v4.17-rc3-10-gf2125992e7cb-rootf
 scp v4.17-rc3-10-gf2125992e7cb-rootfs-live.img.gz people.linaro.org:~/public_html/files/
 ```
 
-## Other useful things
-
-mount -o loop file.ext4 rootfs/;
