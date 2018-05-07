@@ -102,17 +102,17 @@ cd "${GIT_PATH}" && git_describe=$(git describe) && cd -
 EXT4FS_TOP="${OE_ORIGINAL_TOP}/ext4fs"
 
 
-NEW_EXT4="$(basename -s .ext4 ${ROOTFS_EXT4_FILE_PATH})-${git_describe}.ext4"
+NEW_EXT4=$(basename -s .ext4 "${ROOTFS_EXT4_FILE_PATH}")-${git_describe}.ext4
 NEW_EXT4_PATH="${OE_ORIGINAL_TOP}/${NEW_EXT4}"
-if [ ! -z "$(ls -A ${EXT4FS_TOP})" ]; then
+if [ ! -z "$(ls -A "${EXT4FS_TOP}")" ]; then
     sudo umount "${EXT4FS_TOP}"
 fi
-mkdir -p ${EXT4FS_TOP}
+mkdir -p "${EXT4FS_TOP}"
 cp -f "${ROOTFS_EXT4_FILE_PATH}" "${NEW_EXT4_PATH}"
 sudo mount -o loop "${NEW_EXT4_PATH}" "${EXT4FS_TOP}"
 
 # Build
-echo "Building linux version ${git_describe}. See "${OE_TOP}"/build_"${git_describe}".log for output"
+echo "Building linux version ${git_describe}. See ${OE_TOP}/build_${git_describe}.log for output"
 (cd "${GIT_PATH}" && build-kernel -c -k "${KERNEL_VERSION}" -m "${MACHINE}") # > "${OE_TOP}"/build_"${git_describe}".log
 
 # Copy new kernel
@@ -131,10 +131,10 @@ rmdir "${EXT4FS_TOP}"
 
 # Convert ext4 to img
 echo "Converting ext4 filesystem to .img.gz"
-NEW_IMG="$(basename -s .ext4 ${NEW_EXT4}).img.gz"
+NEW_IMG=$(basename -s .ext4 "${NEW_EXT4}").img.gz
 NEW_IMG_PATH="${OE_ORIGINAL_TOP}/${NEW_IMG}"
-ext2simg -z ${NEW_EXT4_PATH} ${NEW_IMG_PATH}
+ext2simg -z "${NEW_EXT4_PATH}" "${NEW_IMG_PATH}"
 
 # Upload to people
 echo "Uploading to people.linaro.org"
-scp ${NEW_IMG} people.linaro.org:~/public_html/
+scp "${NEW_IMG_PATH}" people.linaro.org:~/public_html/
