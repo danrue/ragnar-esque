@@ -6,10 +6,14 @@ set -ex
 
 # Given a snapshots build URL, rebuild a specified kernel and re-publish image
 # and kernel files based on board type.
-URL=http://snapshots.linaro.org/openembedded/lkft/morty/hikey/rpb/linux-mainline/816
-LINUX_GIT_URL=git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
-LINUX_GIT_REFERENCE=/home/drue/src/linux/mainline
-LINUX_GIT_REV=v4.17-rc3
+test -n "${URL}" || (echo "Set URL and try again"; exit 1)
+test -n "${LINUX_GIT_URL}" || (echo "Set LINUX_GIT_URL and try again"; exit 1)
+test -n "${LINUX_GIT_REFERENCE}" || (echo "Set LINUX_GIT_REFERENCE and try again"; exit 1)
+test -n "${LINUX_GIT_REV}" || (echo "Set LINUX_GIT_REV and try again"; exit 1)
+#URL=http://snapshots.linaro.org/openembedded/lkft/morty/hikey/rpb/linux-mainline/816
+#LINUX_GIT_URL=git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+#LINUX_GIT_REFERENCE=/home/drue/src/linux/mainline
+#LINUX_GIT_REV=v4.17-rc3
 # May also want an arg to just use an existing tree instead (useful for bisect)
 
 
@@ -104,37 +108,39 @@ EXT4FS_TOP="${OE_ORIGINAL_TOP}/ext4fs"
 
 NEW_EXT4=$(basename -s .ext4 "${ROOTFS_EXT4_FILE_PATH}")-${git_describe}.ext4
 NEW_EXT4_PATH="${OE_ORIGINAL_TOP}/${NEW_EXT4}"
+NEW_IMG=$(basename -s .ext4 "${NEW_EXT4}").img.gz
+NEW_IMG_PATH="${OE_ORIGINAL_TOP}/${NEW_IMG}"
 if [ ! -z "$(ls -A "${EXT4FS_TOP}")" ]; then
     sudo umount "${EXT4FS_TOP}"
 fi
 mkdir -p "${EXT4FS_TOP}"
-cp -f "${ROOTFS_EXT4_FILE_PATH}" "${NEW_EXT4_PATH}"
-sudo mount -o loop "${NEW_EXT4_PATH}" "${EXT4FS_TOP}"
+if [ ! -f "${NEW_IMG_PATH}" ]; then
+    cp -f "${ROOTFS_EXT4_FILE_PATH}" "${NEW_EXT4_PATH}"
+    sudo mount -o loop "${NEW_EXT4_PATH}" "${EXT4FS_TOP}"
 
-# Build
-echo "Building linux version ${git_describe}. See ${OE_TOP}/build_${git_describe}.log for output"
-(cd "${GIT_PATH}" && build-kernel -c -k "${KERNEL_VERSION}" -m "${MACHINE}") # > "${OE_TOP}"/build_"${git_describe}".log
+    # Build
+    echo "Building linux version ${git_describe}. See ${OE_TOP}/build_${git_describe}.log for output"
+    (cd "${GIT_PATH}" && build-kernel -c -k "${KERNEL_VERSION}" -m "${MACHINE}") # > "${OE_TOP}"/build_"${git_describe}".log
 
-# Copy new kernel
-echo "Copying new linux kernel into ext4 filesystem"
-STAGING=${STAGING:-"${TOP}/staging/${ARCH}/${git_describe_long}"}
-NEW_KERNEL=$(find "${STAGING}" -name 'Image*')
-NEW_MODULES=${STAGING}/lib/modules/$(ls "${STAGING}/lib/modules/")
-sudo cp "${NEW_KERNEL}" "${EXT4FS_TOP}/boot/"
-sudo cp -r "${NEW_MODULES}" "${EXT4FS_TOP}/lib/modules/"
-sudo ln -sf "${NEW_KERNEL}" "${EXT4FS_TOP}/boot/Image"
+    # Copy new kernel
+    echo "Copying new linux kernel into ext4 filesystem"
+    STAGING=${STAGING:-"${TOP}/staging/${ARCH}/${git_describe_long}"}
+    NEW_KERNEL=$(find "${STAGING}" -name 'Image*')
+    NEW_MODULES=${STAGING}/lib/modules/$(ls "${STAGING}/lib/modules/")
+    sudo cp "${NEW_KERNEL}" "${EXT4FS_TOP}/boot/"
+    sudo cp -r "${NEW_MODULES}" "${EXT4FS_TOP}/lib/modules/"
+    sudo ln -sf "${NEW_KERNEL}" "${EXT4FS_TOP}/boot/Image"
 
-# Unmount
-echo "Unmounting ext4 loopback device"
-sudo umount "${EXT4FS_TOP}"
-rmdir "${EXT4FS_TOP}"
+    # Unmount
+    echo "Unmounting ext4 loopback device"
+    sudo umount "${EXT4FS_TOP}"
+    rmdir "${EXT4FS_TOP}"
 
-# Convert ext4 to img
-echo "Converting ext4 filesystem to .img.gz"
-NEW_IMG=$(basename -s .ext4 "${NEW_EXT4}").img.gz
-NEW_IMG_PATH="${OE_ORIGINAL_TOP}/${NEW_IMG}"
-ext2simg -z "${NEW_EXT4_PATH}" "${NEW_IMG_PATH}"
+    # Convert ext4 to img
+    echo "Converting ext4 filesystem to .img.gz"
+    ext2simg -z "${NEW_EXT4_PATH}" "${NEW_IMG_PATH}"
+fi
 
 # Upload to people
 echo "Uploading to people.linaro.org"
-scp "${NEW_IMG_PATH}" people.linaro.org:~/public_html/
+rsync "${NEW_IMG_PATH}" people.linaro.org:~/public_html/
