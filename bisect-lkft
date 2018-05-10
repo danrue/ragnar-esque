@@ -1,0 +1,109 @@
+#!/bin/sh
+
+set -eux
+
+URL=http://snapshots.linaro.org/openembedded/lkft/morty/hikey/rpb/linux-next/255
+LINUX_GIT_URL=git://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git
+LINUX_GIT_REFERENCE=/home/drue/src/linux/mainline
+
+BAD=next-20180504
+GOOD=next-20180503
+LAVA_JOB=job_209256.yaml
+LAVA_TEST_SUITE="1_cve-2017-5669"
+LAVA_TEST_CASE="cve-2017-5669"
+
+. ragnar-lib && init
+set_vars_from_url
+
+BISECT_TOP=${TOP}/bisect-oe/${KERNEL_VERSION}-${MACHINE}-${BUILD_NUMBER}
+mkdir -p "${BISECT_TOP}"
+echo "Building in ${BISECT_TOP}"
+
+export URL
+export LINUX_GIT_URL
+export LINUX_GIT_REFERENCE
+
+# Verify GOOD
+echo "Verifying GOOD rev ${GOOD}"
+export LINUX_GIT_REV=${GOOD}
+NEW_IMG_URL=
+rekernel_rootfs
+
+test -n "${NEW_IMG_URL}" || (echo "ERROR: NEW_IMG_URL not set"; exit 1)
+echo ${NEW_IMG_URL}
+
+LAVA_TEST_STATUS=
+lava_test
+test "${LAVA_TEST_STATUS}" = "pass" || (echo "ERROR: expected 'pass' but got '${LAVA_TEST_STATUS}'"; exit 1)
+echo "Successfully verified GOOD revision"
+
+
+
+# Verify BAD
+echo "Verifying BAD rev ${BAD}"
+export LINUX_GIT_REV=${BAD}
+NEW_IMG_URL=
+rekernel_rootfs
+
+test -n "${NEW_IMG_URL}" || (echo "ERROR: NEW_IMG_URL not set"; exit 1)
+echo ${NEW_IMG_URL}
+
+LAVA_TEST_STATUS=
+lava_test
+test "${LAVA_TEST_STATUS}" = "fail" || (echo "ERROR: expected 'pass' but got '${LAVA_TEST_STATUS}'"; exit 1)
+echo "Successfully verified BAD revision"
+
+
+
+# Clone Linux
+GIT_BISECT_PATH="${BISECT_TOP}/linux"
+CLONE_ARG=""
+if [ -n "${LINUX_GIT_REFERENCE}" ]; then
+    CLONE_ARG="--reference ${LINUX_GIT_REFERENCE}"
+fi
+# shellcheck disable=SC2086
+test -d "${GIT_BISECT_PATH}" || git clone ${CLONE_ARG} ${LINUX_GIT_URL} "${GIT_BISECT_PATH}"
+
+# Begin bisection
+echo "Beginning bisection"
+(cd "${GIT_BISECT_PATH}" && git bisect reset) # Just in case we are re-running
+(cd "${GIT_BISECT_PATH}" && git bisect start --term-good pass --term-bad fail)
+(cd "${GIT_BISECT_PATH}" && git bisect pass "${GOOD}")
+(cd "${GIT_BISECT_PATH}" && git bisect fail "${BAD}")
+
+for i in $(seq 1 100); do
+    LINUX_GIT_REV=$(cd "${GIT_BISECT_PATH}" && git describe)
+    export LINUX_GIT_REV
+    echo "Bisecting #${i}: ${LINUX_GIT_REV}"
+
+    NEW_IMG_URL=
+    rekernel_rootfs
+
+    test -n "${NEW_IMG_URL}" || (echo "ERROR: NEW_IMG_URL not set"; exit 1)
+    echo ${NEW_IMG_URL}
+
+    LAVA_TEST_STATUS=
+    lava_test
+
+    BISECT_OUTPUT=$(cd "${GIT_BISECT_PATH}" && git bisect "${LAVA_TEST_STATUS}" 2>&1 ) && BISECT_EXIT=$? || BISECT_EXIT=$?
+
+    # 'git bisect' will exit with '3' when another bisect is needed, and 0
+    # once bisection is complete.
+    if [ "${BISECT_EXIT}" -eq 3 ]; then
+        if echo "${BISECT_OUTPUT}" | grep -q 'This means the first .* commit is between'; then
+            echo "${BISECT_OUTPUT}"
+            echo "Cannot go further; see https://bit.ly/2jOaa7q"
+            exit 1
+        fi
+        continue
+    elif [ "${BISECT_EXIT}" -eq 0 ]; then
+        (cd "${GIT_BISECT_PATH}" && git bisect log)
+    else
+        echo "ERROR: Unknown exit code '${BISECT_EXIT}' from git bisect"
+        exit 1
+    fi
+
+
+done
+
+echo "Successfully made it to Valhalla! SKOLk"

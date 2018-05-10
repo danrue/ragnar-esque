@@ -1,2 +1,2 @@
 test:
-	shellcheck ragnar-lib rebuild-oe
+	shellcheck ragnar-lib rekernel-rootfs bisect-lkft

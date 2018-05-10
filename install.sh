@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ROOTDIR=$(readlink -f $(dirname $0))
-INSTALL_FILES="build-kernel build-randconfig-kernel deploy-kernel ragnar-lib rebuild-oe"
+INSTALL_FILES="build-kernel build-randconfig-kernel deploy-kernel ragnar-lib rekernel-rootfs bisect-lkft"
 
 home_bin_dir=$HOME/bin
 mkdir -p ${home_bin_dir}
