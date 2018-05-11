@@ -78,7 +78,7 @@ an exit code of 0 when it passes.
 
 To bisect, source your run file and then run 'bisect-lkft'.
 
-See example runfiles in runs.
+See example runfiles in runs/.
 
 Example run:
 
