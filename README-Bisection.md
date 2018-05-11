@@ -1,5 +1,76 @@
 # Ragnar Bisection
 
+## Usage
+
+### Setup
+
+- rekernel-rootfs requires sudo access to be able to mount and update the
+  rootfs image. The following sudoers rule will allow it without password.
+  - `username ALL=NOPASSWD: /usr/bin/mount, /usr/bin/umount, /usr/bin/cp,
+    /usr/bin/ln`
+- The following utilities should be installed:
+  - ext2simg
+
+### Running a bisection
+
+Create a run file such as the following:
+
+```sh
+export URL=http://snapshots.linaro.org/openembedded/lkft/morty/hikey/rpb/linux-next/237
+export LINUX_GIT_URL=git://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git
+export LINUX_GIT_REFERENCE=/home/drue/src/linux/mainline
+
+export BAD=next-20180413
+export GOOD=next-20180411
+export LAVA_JOB=job_209256.yaml
+export LAVA_TEST_SUITE="1_bisect"
+export LAVA_TEST_CASE="bisect"
+```
+
+- URL - a snapshots build url to use as a base OE image.
+- LINUX_GIT_URL - git repo to use for the bisection
+- LINUX_GIT_REFERENCE - (optional) local git path to use during clone (clone
+  --reference)
+- BAD - git revision of the first bad commit
+- GOOD - git revision of the last good commit
+- LAVA_JOB - filename with lava job. system url should be replaced with string
+  "BISECT_URL"
+- LAVA_TEST_SUITE - test suite name in LAVA_JOB file
+- LAVA_TEST_CASE - test case name in LAVA_JOB file
+
+To build a lava job file, take an example job from production and make three
+modifications:
+- Set priority to 100.
+- Set system url to BISECT_URL (for hikey)
+- Create an inline test job such as the following, and remove the actual test
+  (to save time):
+
+```yaml
+    - from: inline
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: bisect
+          description: Bisect
+        run:
+          steps:
+          - lava-test-case bisect --shell /opt/kselftests/default-in-kernel/bpf/test_xdp_meta.sh
+      name: bisect
+      path: inline/bisect
+```
+
+Where the 'lava-test-case' arguments are the actual failing test, that returns
+an exit code of 0 when it passes.
+
+To bisect, source your run file and then run 'bisect-lkft'.
+
+### TODO
+
+- rebuild kselftest, when possible..
+- Remove hard coded rsync paths for people.linaro.org
+- Add support for x15, db410c
+
+
 ## Design
 
 ### Build
