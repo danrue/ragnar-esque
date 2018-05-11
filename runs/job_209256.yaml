@@ -1,0 +1,190 @@
+
+timeouts:
+  job:
+    minutes: 120
+  action:
+    minutes: 10
+  connection:
+    minutes: 2
+
+context:
+  test_character_delay: 10
+
+
+device_type: hi6220-hikey-r2
+job_name: lkft-ltp-syscalls-master-255
+priority: 100
+visibility: public
+
+metadata:
+
+  
+  git branch: master
+  git repo: https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git
+  git commit: 28b24f518f4590b02baa794669e82678ebef695d
+  git describe: next-20180507
+  make_kernelversion: 4.17.0-rc3
+  kernel-config: http://snapshots.linaro.org/openembedded/lkft/morty/hikey/rpb/linux-next/255/config
+  kernel-defconfig: http://snapshots.linaro.org/openembedded/lkft/morty/hikey/rpb/linux-next/255/defconfig
+  build-url: https://ci.linaro.org/job/openembedded-lkft-linux-next/DISTRO=rpb,MACHINE=hikey,label=docker-stretch-amd64/255/
+  build-location: http://snapshots.linaro.org/openembedded/lkft/morty/hikey/rpb/linux-next/255
+  toolchain: aarch64-linaro-linux linaro-6.2
+  series: lkft
+
+  ltp-syscalls-tests__url: git://github.com/linux-test-project/ltp.git
+  ltp-syscalls-tests__version: '20180118'
+  ltp-syscalls-tests__revision: 731cd34e682d297b207668be8b1d15320a9ac1b1
+
+
+
+protocols:
+  lava-lxc:
+    name: lxc-target
+    template: debian
+    distribution: debian
+    release: jessie
+    arch: amd64
+    mirror: http://mirror.bytemark.co.uk/debian
+
+
+actions:
+
+- deploy:
+    namespace: tlxc
+    timeout:
+      minutes: 15
+    to: lxc
+    packages:
+    - wget
+    - unzip
+    os: debian
+
+- boot:
+    namespace: tlxc
+    prompts:
+    - root@(.*):/#
+    timeout:
+      minutes: 5
+    method: lxc
+
+- test:
+    namespace: tlxc
+    timeout:
+      minutes: 10
+    definitions:
+    - from: inline
+      name: install-google-fastboot
+      path: inline/install-google-fastboot.yaml
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: install-fastboot
+          description: Install fastboot provided by google
+        run:
+          steps:
+          - wget http://dl.google.com/android/repository/platform-tools_r26.0.0-linux.zip
+          - unzip -q platform-tools_r26.0.0-linux.zip
+          - ln -s `pwd`/platform-tools/fastboot /usr/bin/fastboot
+          - ln -s `pwd`/platform-tools/adb /usr/bin/adb
+          - fastboot --version
+
+
+- deploy:
+    timeout:
+      minutes: 15
+    to: fastboot
+    namespace: target
+    connection: lxc
+    images:
+      ptable:
+        url: http://images.validation.linaro.org/snapshots.linaro.org/96boards/reference-platform/components/uefi-staging/69/hikey/release/ptable-linux-8g.img
+        reboot: hard-reset
+      boot:
+        url: http://snapshots.linaro.org/openembedded/lkft/morty/hikey/rpb/linux-next/255/boot-0.0+AUTOINC+06e4def583-fb1158a365-r0-hikey-20180507064639-255.uefi.img
+        reboot: hard-reset
+      system:
+        #url: http://snapshots.linaro.org/openembedded/lkft/morty/hikey/rpb/linux-next/255/rpb-console-image-hikey-20180507064639-255.rootfs.img.gz
+        url: BISECT_URL
+        compression: gz
+        apply-overlay: true
+    os: oe
+    protocols:
+      lava-lxc:
+      - action: fastboot-deploy
+        request: pre-power-command
+        timeout:
+          minutes: 2
+
+
+
+- boot:
+    namespace: target
+    auto_login:
+      login_prompt: 'login:'
+      username: linaro
+      login_commands:
+        # Become super user to run tests
+      - su
+    prompts:
+    - hikey:~
+    - root@(.*):/#
+    timeout:
+      minutes: 5
+    method: grub
+    commands: installed
+    protocols:
+      lava-lxc:
+      # other action could be boot-fastboot
+      - action: grub-sequence-action
+        request: pre-os-command
+        timeout:
+          minutes: 2
+
+
+
+
+- test:
+    namespace: target
+    timeout:
+      minutes: 60
+    definitions:
+    - from: inline
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: prep-tests
+          description: Device preparation
+        run:
+          steps:
+          # the image does not raise the interface itself
+          # force a DHCP request to avoid avahi using a zero conf address.
+          - udhcpc
+          - netstat
+          - ip a
+          - ifconfig
+          - df
+          - cat /sys/class/thermal/thermal_zone0/policy || true
+          - echo "power_allocator" > /sys/class/thermal/thermal_zone0/policy || true
+          - cat /sys/class/thermal/thermal_zone0/policy || true
+          - cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_frequencies  |
+            awk '{ print $$(NF-1) }'  > /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq
+          - cat /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq || true
+          - lava-test-job cve-2017-5669 --shell /opt/ltp/testcases/bin/cve-2017-5669
+      name: prep-inline
+      path: inline/prep.yaml
+    - from: inline
+      repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: cve-2017-5669
+          description: Test cve-2017-5669
+        run:
+          steps:
+          # the image does not raise the interface itself
+          # force a DHCP request to avoid avahi using a zero conf address.
+          - lava-test-case cve-2017-5669 --shell /opt/ltp/testcases/bin/cve-2017-5669
+      name: cve-2017-5669
+      path: inline/cve-2017-5669.yaml
+
+
+

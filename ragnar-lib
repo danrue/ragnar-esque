@@ -99,7 +99,7 @@ rekernel_rootfs () {
     set_vars_from_url
     set_machine_vars
 
-    OE_TOP=${TOP}/rebuild-oe/${KERNEL_VERSION}-${MACHINE}-${BUILD_NUMBER}
+    OE_TOP=${TOP}/rekernel-rootfs/${KERNEL_VERSION}-${MACHINE}-${BUILD_NUMBER}
     mkdir -p "${OE_TOP}"
     echo "Building in ${OE_TOP}"
 
@@ -138,13 +138,11 @@ rekernel_rootfs () {
     cd "${GIT_PATH}" && git_describe=$(git describe) && cd -
 
     # Mount ext4 filesystem
-    EXT4FS_TOP="${OE_ORIGINAL_TOP}/ext4fs"
-
-
+    EXT4FS_TOP="${OE_TOP}/ext4fs"
     NEW_EXT4=$(basename -s .ext4 "${ROOTFS_EXT4_FILE_PATH}")-${git_describe}.ext4
-    NEW_EXT4_PATH="${OE_ORIGINAL_TOP}/${NEW_EXT4}"
+    NEW_EXT4_PATH="${OE_TOP}/${NEW_EXT4}"
     NEW_IMG=$(basename -s .ext4 "${NEW_EXT4}").img.gz
-    NEW_IMG_PATH="${OE_ORIGINAL_TOP}/${NEW_IMG}"
+    NEW_IMG_PATH="${OE_TOP}/${NEW_IMG}"
     if [ ! -z "$(ls -A "${EXT4FS_TOP}")" ]; then
         sudo umount "${EXT4FS_TOP}"
     fi

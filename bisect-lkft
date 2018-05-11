@@ -2,15 +2,25 @@
 
 set -eux
 
-URL=http://snapshots.linaro.org/openembedded/lkft/morty/hikey/rpb/linux-next/255
-LINUX_GIT_URL=git://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git
-LINUX_GIT_REFERENCE=/home/drue/src/linux/mainline
+#URL=http://snapshots.linaro.org/openembedded/lkft/morty/hikey/rpb/linux-next/255
+#LINUX_GIT_URL=git://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git
+#LINUX_GIT_REFERENCE=/home/drue/src/linux/mainline
+#
+#BAD=next-20180504
+#GOOD=next-20180503
+#LAVA_JOB=job_209256.yaml
+#LAVA_TEST_SUITE="1_cve-2017-5669"
+#LAVA_TEST_CASE="cve-2017-5669"
 
-BAD=next-20180504
-GOOD=next-20180503
-LAVA_JOB=job_209256.yaml
-LAVA_TEST_SUITE="1_cve-2017-5669"
-LAVA_TEST_CASE="cve-2017-5669"
+test -n "${URL}" || (echo "Set URL and try again"; exit 1)
+test -n "${LINUX_GIT_URL}" || (echo "Set LINUX_GIT_URL and try again"; exit 1)
+LINUX_GIT_REFERENCE="${LINUX_GIT_REFERENCE:-}" # optional
+test -n "${BAD}" || (echo "Set BAD and try again"; exit 1)
+test -n "${GOOD}" || (echo "Set GOOD and try again"; exit 1)
+test -n "${LAVA_JOB}" || (echo "Set LAVA_JOB and try again"; exit 1)
+test -n "${LAVA_TEST_SUITE}" || (echo "Set LAVA_TEST_SUITE and try again"; exit 1)
+test -n "${LAVA_TEST_CASE}" || (echo "Set LAVA_TEST_CASE and try again"; exit 1)
+
 
 . ragnar-lib && init
 set_vars_from_url
