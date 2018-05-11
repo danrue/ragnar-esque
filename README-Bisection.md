@@ -2,6 +2,19 @@
 
 ## Usage
 
+rekernel-rootfs is a utility that takes a given rootfs image file, builds a
+kernel using build-kernel, and replaces the kernel in the rootfs with the new
+kernel.
+
+bisect-lkft uses rekernel-rootfs and lavacli to do a bisection.
+
+Both utilities are written to be idempotent, so that if a bisection fails for
+some reason, bisect-lkft can be restarted and most of the builds and test will
+not be re-run. It will pick up where it left off.
+
+rekernel-rootfs artifacts can be found in ~/ragnar-artifacts/rekernel-rootfs,
+and bisect-lkft artifacts can be fonud in ~/ragnar-artifacts/bisect-lkft.
+
 ### Setup
 
 - rekernel-rootfs requires sudo access to be able to mount and update the
@@ -10,6 +23,7 @@
     /usr/bin/ln`
 - The following utilities should be installed:
   - ext2simg
+  - lavacli
 
 ### Running a bisection
 

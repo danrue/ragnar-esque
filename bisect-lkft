@@ -25,7 +25,7 @@ test -n "${LAVA_TEST_CASE}" || (echo "Set LAVA_TEST_CASE and try again"; exit 1)
 . ragnar-lib && init
 set_vars_from_url
 
-BISECT_TOP=${TOP}/bisect-oe/${KERNEL_VERSION}-${MACHINE}-${BUILD_NUMBER}
+BISECT_TOP=${TOP}/bisect-lkft/${KERNEL_VERSION}-${MACHINE}-${BUILD_NUMBER}
 mkdir -p "${BISECT_TOP}"
 echo "Building in ${BISECT_TOP}"
 
