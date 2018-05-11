@@ -78,12 +78,21 @@ an exit code of 0 when it passes.
 
 To bisect, source your run file and then run 'bisect-lkft'.
 
+See example runfiles in runs.
+
+Example run:
+
+```sh
+. test_xdp_meta.sh
+bisect-lkft
+```
+
 ### TODO
 
-- rebuild kselftest, when possible..
+- rebuild kselftest, when possible (mainline/next)..
 - Remove hard coded rsync paths for people.linaro.org
 - Add support for x15, db410c
-
+- Support for qemu? (local or using lava?)
 
 ## Design
 
