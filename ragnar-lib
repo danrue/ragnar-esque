@@ -178,7 +178,7 @@ rekernel_rootfs () {
     # Upload to people
     # XXX hard coded destinations here
     echo "Uploading to people.linaro.org"
-    #rsync "${NEW_IMG_PATH}" people.linaro.org:~/public_html/
+    rsync "${NEW_IMG_PATH}" people.linaro.org:~/public_html/
     export NEW_IMG_URL="http://people.linaro.org/~dan.rue/${NEW_IMG}"
 
 }
