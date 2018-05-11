@@ -40,7 +40,7 @@ export LINUX_GIT_REFERENCE=/home/drue/src/linux/mainline
 
 export BAD=next-20180413
 export GOOD=next-20180411
-export LAVA_JOB=job_209256.yaml
+export LAVA_JOB=job_181558.yaml
 export LAVA_TEST_SUITE="1_bisect"
 export LAVA_TEST_CASE="bisect"
 ```
