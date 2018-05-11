@@ -23,7 +23,8 @@ and bisect-lkft artifacts can be fonud in ~/ragnar-artifacts/bisect-lkft.
     /usr/bin/ln`
 - The following utilities should be installed:
   - ext2simg
-  - lavacli
+  - lavacli (with default lava destination set up with a key that can submit
+    jobs)
 
 ### Running a bisection
 
