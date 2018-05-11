@@ -10,10 +10,13 @@ bisect-lkft uses rekernel-rootfs and lavacli to do a bisection.
 
 Both utilities are written to be idempotent, so that if a bisection fails for
 some reason, bisect-lkft can be restarted and most of the builds and test will
-not be re-run. It will pick up where it left off.
+not be re-run. Rather, it will pick up where it left off.
 
 rekernel-rootfs artifacts can be found in ~/ragnar-artifacts/rekernel-rootfs,
 and bisect-lkft artifacts can be fonud in ~/ragnar-artifacts/bisect-lkft.
+
+Before bisecting, bisect-lkft will verify the GOOD and BAD commits to ensure
+the test setup is correct.
 
 ### Setup
 
