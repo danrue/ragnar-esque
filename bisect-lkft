@@ -79,7 +79,7 @@ echo "Beginning bisection"
 (cd "${GIT_BISECT_PATH}" && git bisect pass "${GOOD}")
 (cd "${GIT_BISECT_PATH}" && git bisect fail "${BAD}")
 
-for i in $(seq 1 100); do
+for i in $(seq 1 20); do
     LINUX_GIT_REV=$(cd "${GIT_BISECT_PATH}" && git describe)
     export LINUX_GIT_REV
     echo "Bisecting #${i}: ${LINUX_GIT_REV}"
@@ -94,24 +94,19 @@ for i in $(seq 1 100); do
     lava_test
 
     BISECT_OUTPUT=$(cd "${GIT_BISECT_PATH}" && git bisect "${LAVA_TEST_STATUS}" 2>&1 ) && BISECT_EXIT=$? || BISECT_EXIT=$?
+    echo "${BISECT_OUTPUT}"
 
-    # 'git bisect' will exit with '3' when another bisect is needed, and 0
-    # once bisection is complete.
-    if [ "${BISECT_EXIT}" -eq 3 ]; then
-        if echo "${BISECT_OUTPUT}" | grep -q 'This means the first .* commit is between'; then
-            echo "${BISECT_OUTPUT}"
-            echo "Cannot go further; see https://bit.ly/2jOaa7q"
-            exit 1
-        fi
-        continue
-    elif [ "${BISECT_EXIT}" -eq 0 ]; then
-        (cd "${GIT_BISECT_PATH}" && git bisect log)
-    else
-        echo "ERROR: Unknown exit code '${BISECT_EXIT}' from git bisect"
+    # 'git bisect' exit codes are worthless. Just parse output.
+    if echo "${BISECT_OUTPUT}" | grep -q 'This means the first .* commit is between'; then
+        echo "${BISECT_OUTPUT}"
+        echo "Cannot go further; see https://bit.ly/2jOaa7q"
         exit 1
     fi
-
+    if echo "${BISECT_OUTPUT}" | grep -q 'first fail commit:'; then
+        (cd "${GIT_BISECT_PATH}" && git bisect log)
+        exit 0
+    fi
 
 done
 
-echo "Successfully made it to Valhalla! SKOLk"
+echo "Successfully made it to Valhalla! SKOL"
