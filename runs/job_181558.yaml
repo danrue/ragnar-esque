@@ -85,7 +85,7 @@ actions:
         run:
           steps:
           - wget http://dl.google.com/android/repository/platform-tools_r26.0.0-linux.zip
-          - unzip platform-tools_r26.0.0-linux.zip
+          - unzip -q platform-tools_r26.0.0-linux.zip
           - ln -s `pwd`/platform-tools/fastboot /usr/bin/fastboot
           - ln -s `pwd`/platform-tools/adb /usr/bin/adb
           - fastboot --version
@@ -99,7 +99,8 @@ actions:
     connection: lxc
     images:
       ptable:
-        url: http://releases.linaro.org/reference-platform/embedded/hikey/16.12/rpb/bootloader/ptable-linux-8g.img
+        #url: http://releases.linaro.org/reference-platform/embedded/hikey/16.12/rpb/bootloader/ptable-linux-8g.img
+        url: http://images.validation.linaro.org/snapshots.linaro.org/96boards/reference-platform/components/uefi-staging/69/hikey/release/ptable-linux-8g.img
         reboot: hard-reset
       boot:
         url: http://snapshots.linaro.org/openembedded/lkft/morty/hikey/rpb/linux-next/237/boot-0.0+AUTOINC+06e4def583-fb1158a365-r0-hikey-20180413032653-237.uefi.img

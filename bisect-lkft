@@ -48,7 +48,6 @@ test "${LAVA_TEST_STATUS}" = "pass" || (echo "ERROR: expected 'pass' but got '${
 echo "Successfully verified GOOD revision"
 
 
-
 # Verify BAD
 echo "Verifying BAD rev ${BAD}"
 export LINUX_GIT_REV=${BAD}
@@ -60,9 +59,8 @@ echo ${NEW_IMG_URL}
 
 LAVA_TEST_STATUS=
 lava_test
-test "${LAVA_TEST_STATUS}" = "fail" || (echo "ERROR: expected 'pass' but got '${LAVA_TEST_STATUS}'"; exit 1)
+test "${LAVA_TEST_STATUS}" = "fail" || (echo "ERROR: expected 'fail' but got '${LAVA_TEST_STATUS}'"; exit 1)
 echo "Successfully verified BAD revision"
-
 
 
 # Clone Linux

@@ -156,11 +156,11 @@ rekernel_rootfs () {
         (cd "${GIT_PATH}" && build-kernel -c -k "${KERNEL_VERSION}" -m "${MACHINE}") > "${OE_TOP}"/build_"${git_describe}".log
 
         # Copy new kernel
-        echo "Copying new linux kernel into ext4 filesystem"
-        STAGING=${STAGING:-"${TOP}/staging/${ARCH}/${git_describe_long}"}
+        STAGING="${TOP}/staging/${ARCH}/${git_describe_long}"
         NEW_KERNEL_PATH=$(find "${STAGING}" -name 'Image*')
         NEW_KERNEL=$(basename "${NEW_KERNEL_PATH}")
         NEW_MODULES=${STAGING}/lib/modules/$(ls "${STAGING}/lib/modules/")
+        echo "Copying new linux kernel into ext4 filesystem"
         sudo cp "${NEW_KERNEL_PATH}" "${EXT4FS_TOP}/boot/"
         sudo cp -r "${NEW_MODULES}" "${EXT4FS_TOP}/lib/modules/"
         sudo ln -sf "/boot/${NEW_KERNEL}" "${EXT4FS_TOP}/boot/Image"
